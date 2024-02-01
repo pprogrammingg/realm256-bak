@@ -1,7 +1,5 @@
 # A Guide to DAO (Decentralized Autonomous Organization)
 
-## Understanding Decentralized Autonomous Organization (DAO)
-
 ## High-Level Design Decisions for DAO Radix Components
 **WARNING:** This document is a work in progress, and additional decisions may be added in the future.
 
@@ -26,18 +24,22 @@ Decisions made for now:
 ### Sequence Diagram (Actual diagram is a work in progress)
 UserA: Buys DAO governance tokens from a Decentralized Exchange
 
-Project Owners:
-1. Invoke `Creates Proposal` and deposit a certain amount of XRD to prevent spam.
-2. Admin approves or disapproves.
-    - Approves: Proceed to step 3.
-    - Disapproves: Proposer loses 50% (or 25%) of the locked amount.
-3. Proposal is inserted into a Key-Value store of the DAO component with empty voting information.
-4. Community/Admins: Off-chain users are informed about vote open and close days for various projects.
+
+1. Proposal Creator: Invoke `Creates Proposal` and deposit a certain amount of XRD to prevent spam.
+2. Component DAO: creates `proposal_NFT` badge with a unique ID. The state of the project is tracked within this NFT>
+3. Admin: approves or disapproves the proposal
+    - Approves: `proposal_NFT` ID is inserted into a Key-Value store of the DAO component with empty voting information. Status of `proposal_NFT` will change to `approved_for_voting`. Admin can set voting period or could automatically update on the NFT.
+    - Disapproves: `proposal_NFT` gets updated with `proposal_rejected_by_admin`. Proposal creator can claim 75% of the initial deposit.
+4. Communications Team: if `proposal_NFT` is `approved_for_voting`, the users are informed off-chain about vote open and close period for various projects.
 5. UserA: Attempts to vote
-    - If possessing governance tokens, transfer them to the DAO component and claim NFT with weight calculated based on the number of governance tokens. Users may recast votes as long as the voting is open.
-    - If satisfied with voting, can use the claim NFT to get back DAO governance tokens.
+    - If possessing governance tokens, transfer them to the DAO component and claim NFT with weight calculated based on the number of governance tokens. Users may recast votes as long as the voting is open and they have claim NFT.
+    - Casting vote triggers `update_user_vote` on DAO component.
+    - User may re-cast votes as long as the period is open.
+    - Each re-cast will trigger `update_user_vote` on DAO Component again.
+    - If voting period is over, user can use the claim NFT to get back DAO governance tokens.
 6. DAO Component: Once the right amount of votes is tallied for a proposal and the voting period has ended:
-    - Perform an automatic action, e.g., send an NFT-Pass that gives Proposal Owners access to publish the project.
+    - If votes are in favour: update status of `proposal_NFT` to `proposal_ready_to_publish`
+    - Else: update status of `proposal_NFT` to `proposal_did_not_get_enough_votes`
     - Remove proposal and voting info from DAO component state.
 
 ## Code Hardening and Design Considerations (to be continued)

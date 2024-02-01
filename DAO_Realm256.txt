@@ -1,0 +1,34 @@
+  title This is a title
+participant Proposal Creator
+participant DAO Component
+participant Realm256
+participant Voter A
+participant Voter B
+
+Proposal Creator -> DAO Component:  Call "create_proposal" method
+
+DAO Component -> DAO Component: creates "proposal_NFT"
+
+note over Realm256 : Approve proposal
+Realm256 -#15b3e8> Voter A: Communicate proposal\n voting period
+Realm256 -#15b3e8> Voter B: Communicate proposal\n voting period
+Realm256 -#15b3e8> DAO Component: call update proposal\n NFT with status\n "approved_for_voting"
+note over Realm256: Disapprove Proposal
+Realm256 -#00ff00> DAO Component: call update proposal NFT with status "rejected_by_admin"
+Proposal Creator -#00ff00> DAO Component: Call "claim_rejected_\nproposal_deposit\n_minus_fee" method  
+
+Voter A -#3138f7> DAO Component: submit DAO tokens via "register_for_voting"
+DAO Component -#3138f7> Voter A: trigger "issue_voter_claim_NFT" \nto give "claim_NFT_badge" to the user
+Voter B -#3138f7> DAO Component: submit DAO tokens via "register_for_voting"
+DAO Component -#3138f7> Voter B: trigger "issue_voter_claim_NFT" \nto give "claim_NFT_badge" to the user
+
+Voter A -#ff9b05> DAO Component:  call "cast_vote"\n Can be called many times \n method\n 1.presents "claim_NFT_badge" proof\n 2. transfer update KV Store with voting info
+
+Voter B -#ff2205> DAO Component:  call "cast_vote"\n Can be called many times \n method\n 1.presents "claim_NFT_badge" proof\n 2. transfer update KV Store with voting info
+
+
+Voter A -#00daf7> DAO Component: call "claim_dao_tokens" \n input "claim_NFT" to get back original DAO token. \n Can discuss how current votes are handled if user unregistering themselves.
+
+DAO Component -> DAO Component:  Once voting period ends for the proposal\n 1a.If votes are in favour:\n update status of `proposal_NFT` to\n "proposal_ready_to_publish" \n 1b. Else: update status of "proposal_NFT" to "proposal_did_not_get_enough_votes"\n 2. Remove proposal and voting info from DAO component state.
+
+Proposal Creator ->Proposal Creator: View status of the \n proposal on dashboard
