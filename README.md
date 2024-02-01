@@ -1,84 +1,71 @@
-# A How to DAO
+# A Guide to DAO (Decentralized Autonomous Organization)
 
-## What is Decentralized Autonomous Organization?
+## Understanding Decentralized Autonomous Organization (DAO)
 
+## High-Level Design Decisions for DAO Radix Components
+**WARNING:** This document is a work in progress, and additional decisions may be added in the future.
 
-## High level DAO Radix component design decisions 
-** WARNING ** this is an evolving document, so more decision might be added in the future
+- DAO designs vary in complexity based on factors such as:
+  - `single proposal at a time` vs `multi-proposal at any period of time`: For example, Realm256 voters can choose between voting on a single NFT collection or multiple collections from different authors, provided that the voting periods overlap.
+    - `single proposal`:
+      - Pros: Simple to implement
+      - Cons: Impractical for voters to stay online and vote for each new proposal; a proposal queue becomes necessary.
+    - `multiple proposals`:
+      - Pros: Voters can vote on multiple proposals as long as the voting period is open.
+      - Cons: Must avoid `state explosion` (Subject to discussion: a. Are there that many proposals? b. Do we need to keep a history of which proposal got how much vote forever or can we just remove the proposal key after the voting round finishes? This is to prevent the component state from becoming too large.)
+  - `Proposal LifeCycle`:
+    - Some projects involve registration (where proposers deposit tokens to propose), approval by admin (as a gatekeeper, potential middleman attacks), user voting stage, and automatic actions based on vote results. Some steps in between can be further tweaked, and proposals can be removed from the component state object.
+  - `DAO Resource`:
+    - Do users claim DAO tokens from the dApp, or do they need to buy them from a DEX? Free claiming might be problematic, as individuals with different wallets could exploit this for free tokens.
 
-- DAO designs can range in complexity with regards to various factors. There are :
-    - `single proposal at a time` vs `multi-proposal at any period of time`: for example Realm256 voters can choose between 1 NFT collection to vote on or multiple NFT collections from different authors, provided that the voting periods overlap.
-        - `single proposal` 
-            - pros : very simple to implement
-            - cons : might be impractical to ask voters to keep online and vote for each new proposal and a proposal queue is then necessary as proposals won't move
-        - `multlpe proposals`
-            - pros: voters can vote on multiple proposals as long as the voting period for that proposal is open
-            - cons: must take care to not have `state explosion` see below (Subject to discussion, a. Are there that many proposals? b. Do we neeed to keep a hisotry of which proposal got how much vote forever or can we just remove the proposal key after voting round finishes? fThis is so that the state of component does not get too big)
-    - `Proposal LifeCycle`:
-        - Some projects have register (where proposer deposits tokens to even propose), approval by admin (admin as gatekeepr, potential middleman attacks) --> enables proposal to be voted for should current time and date be between prosposal start and end dates, User Voting stage and automatic action based on vote result, Some of the steps in between can be tweaked further, remove proposal from component state object 
-    - `DAO Resource`:
-        - Do users claim DAO tokens from the dApp or they need ot buy from a DEX. Free claiming might be bad, as someone with different wallets will keep mintng free tokens.
+Decisions made for now:
 
-The following are decided for now:
+1. Let's go with the `multiple proposals` design.
+2. Users have to buy DAO governance tokens from a DEX/CEX.
 
-1. Let's go with `multiple proposals` design
-2. Users have to buy DAO governance toekns from a DEX/CEX
-
-### Sequence Diagram (Actual diagram is WIP)
-UserA : Buys DAO governance token from a Decentralized Exchange
+### Sequence Diagram (Actual diagram is a work in progress)
+UserA: Buys DAO governance tokens from a Decentralized Exchange
 
 Project Owners:
-1. invoke `Creates Proposal` and deposits certain amount of XRD. So that this does not become an spam habit to keep pushing proposals. 
+1. Invoke `Creates Proposal` and deposit a certain amount of XRD to prevent spam.
 2. Admin approves or disapproves.
-    - Approves: go to step3.
-    - Disapproves: proposer loses 50% of amount locked (or 25%)
-3. Proposal is inserted in a Key-Value store of the DAO component with an empty voting information.
-3. Community/Admins: off-chain users are communicated to about vote open and close days for various projects
-4. UserA: Attemp vote
-    - If posses governance token, transfer those the othe DAO component and get claim NFT with weight calculated based on number of governance tokens. Users may re-cast votes as long as voting is open 
-    - If satisfied with voting can use claim NFT to get back DAO governance tokens
-5. DAO Component: one the right amount of votes are tallied for a proposal and voting period has ended:
-    - Perform an automatic action, e.g. send an NFT-Pass that gives Proposal Owners access to publish the project.
+    - Approves: Proceed to step 3.
+    - Disapproves: Proposer loses 50% (or 25%) of the locked amount.
+3. Proposal is inserted into a Key-Value store of the DAO component with empty voting information.
+4. Community/Admins: Off-chain users are informed about vote open and close days for various projects.
+5. UserA: Attempts to vote
+    - If possessing governance tokens, transfer them to the DAO component and claim NFT with weight calculated based on the number of governance tokens. Users may recast votes as long as the voting is open.
+    - If satisfied with voting, can use the claim NFT to get back DAO governance tokens.
+6. DAO Component: Once the right amount of votes is tallied for a proposal and the voting period has ended:
+    - Perform an automatic action, e.g., send an NFT-Pass that gives Proposal Owners access to publish the project.
     - Remove proposal and voting info from DAO component state.
 
-##  Code Hardening and Design Gotchas (to be continued)
+## Code Hardening and Design Considerations (to be continued)
 
 Documentation Source [Code Hardening](https://docs.radixdlt.com/docs/code-hardening)
 
-
 ### Double Voting / Inflating Voting Weight
-From the document
+From the document:
+
 ```
 In certain cases, special attention needs to be paid to the use of Proof amounts, especially in the context of applications that rely on such amounts for the casting of votes. Multiple proofs can be created of the same underlying assets.
-
 ```
 
-1. Voters can cast votes of a maximum weight equal to the amount of DAO resources (e.g. a governance token) they possess.
+1. Voters can cast votes with a maximum weight equal to the amount of DAO resources (e.g., a governance token) they possess.
 2. They can vote for **multiple** proposals.
 
-#### Potential Mishap
+#### Potential Mishaps
 
-1. If an ordinary proof of amount of DAO resource used, they can vote multiple times, since by proof the tokens are not actually taken away from them
-2. They can create one proof of amount and then call the `vote` method multiple times thus inflating the wieght of their token and voting power.
+1. If an ordinary proof of the amount of DAO resource is used, they can vote multiple times since, by proof, the tokens are not actually taken away from them.
+2. They can create one proof of amount and then call the `vote` method multiple times, thus inflating the weight of their token and voting power.
 
-#### Solution for the mishap
+#### Solution for the Mishap
 
-1. Instead of sending proof of resource, the voter will send in a bucket containing their DAO resource (e.g. governance token) to be held by the DAO
-2. In return they will get a claim resources (e.g. a claim NFT or claim fungible tokens) that allows them to re-cast their vote (during voting open period) and be able to claim their DAO resource when voting period is closed.
+1. Instead of sending proof of the resource, the voter will send in a bucket containing their DAO resource (e.g., governance token) to be held by the DAO.
+2. In return, they will get a claim resource (e.g., a claim NFT or claim fungible tokens) that allows them to recast their vote (during the voting open period) and claim their DAO resource when the voting period is closed.
 
-- Refer to the code examples for both right and wrong DAO configurations
-
-
+Refer to the code examples for both correct and incorrect DAO configurations.
 
 ### State Explosion
 
 Documentation Source [Code Hardening](https://docs.radixdlt.com/docs/code-hardening)
-
-
-
-
-
-
-
-
-
