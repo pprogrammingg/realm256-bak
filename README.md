@@ -15,7 +15,6 @@
     - Some projects involve registration (where proposers deposit tokens to propose), approval by admin (as a gatekeeper, potential middleman attacks), user voting stage, and automatic actions based on vote results. Some steps in between can be further tweaked, and proposals can be removed from the component state object.
   - `DAO Resource`:
     - Do users claim DAO tokens from the dApp, or do they need to buy them from a DEX? Free claiming might be problematic, as individuals with different wallets could exploit this for free tokens.
-
 Decisions made for now:
 
 1. Let's go with the `multiple proposals` design.
@@ -71,3 +70,6 @@ Refer to the code examples for both correct and incorrect DAO configurations.
 ### State Explosion
 
 Documentation Source [Code Hardening](https://docs.radixdlt.com/docs/code-hardening)
+
+# Sequence Diagram
+![DAO_Realm256](https://github.com/pprogrammingg/real256-bak/assets/29218920/cbace362-d976-4f0f-a986-eacb1c44b300)
