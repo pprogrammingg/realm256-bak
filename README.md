@@ -20,28 +20,12 @@ Decisions made for now:
 1. Let's go with the `multiple proposals` design.
 2. Users have to buy DAO governance tokens from a DEX/CEX.
 
-### Sequence Diagram (Actual diagram is a work in progress)
-UserA: Buys DAO governance tokens from a Decentralized Exchange
+
+# Sequence Diagram
+![DAO_Realm256](https://github.com/pprogrammingg/real256-bak/assets/29218920/cbace362-d976-4f0f-a986-eacb1c44b300)
 
 
-1. Proposal Creator: Invoke `Creates Proposal` and deposit a certain amount of XRD to prevent spam.
-2. Component DAO: creates `proposal_NFT` badge with a unique ID. The state of the project is tracked within this NFT>
-3. Admin: approves or disapproves the proposal
-    - Approves: `proposal_NFT` ID is inserted into a Key-Value store of the DAO component with empty voting information. Status of `proposal_NFT` will change to `approved_for_voting`. Admin can set voting period or could automatically update on the NFT.
-    - Disapproves: `proposal_NFT` gets updated with `proposal_rejected_by_admin`. Proposal creator can claim 75% of the initial deposit.
-4. Communications Team: if `proposal_NFT` is `approved_for_voting`, the users are informed off-chain about vote open and close period for various projects.
-5. UserA: Attempts to vote
-    - If possessing governance tokens, transfer them to the DAO component and claim NFT with weight calculated based on the number of governance tokens. Users may recast votes as long as the voting is open and they have claim NFT.
-    - Casting vote triggers `update_user_vote` on DAO component.
-    - User may re-cast votes as long as the period is open.
-    - Each re-cast will trigger `update_user_vote` on DAO Component again.
-    - If voting period is over, user can use the claim NFT to get back DAO governance tokens.
-6. DAO Component: Once the right amount of votes is tallied for a proposal and the voting period has ended:
-    - If votes are in favour: update status of `proposal_NFT` to `proposal_ready_to_publish`
-    - Else: update status of `proposal_NFT` to `proposal_did_not_get_enough_votes`
-    - Remove proposal and voting info from DAO component state.
-
-## Code Hardening and Design Considerations (to be continued)
+## Potential Radix Implementation Pitfalls and Solutions
 
 Documentation Source [Code Hardening](https://docs.radixdlt.com/docs/code-hardening)
 
@@ -70,6 +54,3 @@ Refer to the code examples for both correct and incorrect DAO configurations.
 ### State Explosion
 
 Documentation Source [Code Hardening](https://docs.radixdlt.com/docs/code-hardening)
-
-# Sequence Diagram
-![DAO_Realm256](https://github.com/pprogrammingg/real256-bak/assets/29218920/cbace362-d976-4f0f-a986-eacb1c44b300)
