@@ -11,19 +11,21 @@
     - `multiple proposals`:
       - Pros: Voters can vote on multiple proposals as long as the voting period is open.
       - Cons: Must avoid `state explosion` (Subject to discussion: a. Are there that many proposals? b. Do we need to keep a history of which proposal got how much vote forever or can we just remove the proposal key after the voting round finishes? This is to prevent the component state from becoming too large.)
-  - `Proposal LifeCycle`:
-    - Some projects involve registration (where proposers deposit tokens to propose), approval by admin (as a gatekeeper, potential middleman attacks), user voting stage, and automatic actions based on vote results. Some steps in between can be further tweaked, and proposals can be removed from the component state object.
-  - `DAO Resource`:
-    - Do users claim DAO tokens from the dApp, or do they need to buy them from a DEX? Free claiming might be problematic, as individuals with different wallets could exploit this for free tokens.
+  - `DAO Tokens`:
+    - Is it an exclusive token or same as core ecosystem token?
+    - Is it limited or unlimited in supply?
+
+      
+
 Decisions made for now:
 
 1. Let's go with the `multiple proposals` design.
-2. Users have to buy DAO governance tokens from a DEX/CEX.
+2. Voters submit DAO tokens to the DAO Component and receive NFT badge. NFT unique badge address is recorded with vote. So transferring badges between wallets just updates one entry.
+ 
 
 
 # Sequence Diagram
-![DAO_Realm256](https://github.com/pprogrammingg/real256-bak/assets/29218920/cbace362-d976-4f0f-a986-eacb1c44b300)
-
+![DAO_Realm256](DAO_Realm256.svg)
 
 ## Potential Radix Implementation Pitfalls and Solutions
 
