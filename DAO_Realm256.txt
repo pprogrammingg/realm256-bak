@@ -1,33 +1,30 @@
-  title This is a title
+DAO Sequence Diagram
+
 participant Proposal Creator
 participant DAO Component
-participant Realm256
 participant Voter A
 participant Voter B
 
-Proposal Creator -> DAO Component:  Call "create_proposal" method
+Proposal Creator -#FF00FF> DAO Component:  Call "create_proposal" method
+DAO Component -#FF00FF> DAO Component: Create Proposal NFT \n with updatable Key/Value NFT data\n and mandatory fields that get\n initiaed such as Amendment period end date\n and voting period end date \n (left open for now on purpose)\n store porposal NFT resource \naddress in components map\n of type <Proposal ResourceAddress, \n<Voter Badge Resource Address, Vote>>
+DAO Component -#FF00FF>Proposal Creator: resource address of the NFT
 
-DAO Component -> DAO Component: creates "proposal_NFT"
 
-note over Realm256 : Approve proposal
-Realm256 -#15b3e8> Voter A: Communicate proposal\n voting period
-Realm256 -#15b3e8> Voter B: Communicate proposal\n voting period
-Realm256 -#15b3e8> DAO Component: call update proposal\n NFT with status\n "approved_for_voting"
-note over Realm256: Disapprove Proposal
-Realm256 -#00ff00> DAO Component: call update proposal NFT with status "rejected_by_admin"
-Proposal Creator -#00ff00> DAO Component: Call "claim_rejected_\nproposal_deposit\n_minus_fee" method  
+note over Proposal Creator#00FF00:Amendment Process
+Proposal Creator -#00FF00>DAO Component: Invokes "amend_proposal" \n with a set of new metadata e.g. \n new IPFS URL for NFT collection. \nAmending could for example \n increase amendment and voting start \n period by one week. \n or too many amends \n can incur protocol fees (but can be appealed)
+DAO Component -#00FF00> DAO Component: Updates the metadata on "proposal_NFT"
 
 Voter A -#3138f7> DAO Component: submit DAO tokens via "register_for_voting"
-DAO Component -#3138f7> Voter A: trigger "issue_voter_claim_NFT" \nto give "claim_NFT_badge" to the user
+DAO Component -#3138f7> Voter A: trigger "issue_voter_claim_badge_nft" \nto give "claim_badge_nft_badge" to the user
 Voter B -#3138f7> DAO Component: submit DAO tokens via "register_for_voting"
-DAO Component -#3138f7> Voter B: trigger "issue_voter_claim_NFT" \nto give "claim_NFT_badge" to the user
+DAO Component -#3138f7> Voter B: trigger "issue_voter_claim_badge_nft" \nto give "claim_badge_nft_badge" to the user
 
-Voter A -#ff9b05> DAO Component:  call "cast_vote"\n Can be called many times \n method\n 1.presents "claim_NFT_badge" proof\n 2. transfer update KV Store with voting info
+Voter A -#ff9b05> DAO Component:  call "cast_vote"\n Can be called many times \n 1.presents "claim_badge_nft_badge" as proof a\n 2. transfer update KV Store with voting info
 
-Voter B -#ff2205> DAO Component:  call "cast_vote"\n Can be called many times \n method\n 1.presents "claim_NFT_badge" proof\n 2. transfer update KV Store with voting info
+Voter B -#ff2205> DAO Component:  call "cast_vote"\n Can be called many times \n method\n 1.presents "claim_badge_nft_badge" proof\n 2. transfer update KV Store with voting info
 
 
-Voter A -#00daf7> DAO Component: call "claim_dao_tokens" \n input "claim_NFT" to get back original DAO token. \n Can discuss how current votes are handled if user unregistering themselves.
+Voter A -#00daf7> DAO Component: call "claim_dao_tokens" \n input "claim_badge_nft" to get back original DAO token. \n Can discuss how current votes are handled if user unregistering themselves.
 
 DAO Component -> DAO Component:  Once voting period ends for the proposal\n 1a.If votes are in favour:\n update status of `proposal_NFT` to\n "proposal_ready_to_publish" \n 1b. Else: update status of "proposal_NFT" to "proposal_did_not_get_enough_votes"\n 2. Remove proposal and voting info from DAO component state.
 
