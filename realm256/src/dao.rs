@@ -28,7 +28,7 @@ pub struct ProposalData {
     status: ProposalStatus,
     voting_started_instant: Instant,
     voting_ended_instant: Instant,
-    vote_stats: HashMap<ResourceAddress, Vote>,
+    votes_stats: HashMap<ResourceAddress, Vote>,
 }
 
 pub struct DaoConfiguraiton {
@@ -70,9 +70,14 @@ pub struct DaoConfiguraiton {
 #[blueprint]
 mod dao {
     struct Dao {
-       proposalsTable: HashMap<ResourceAddress, ProposalData>,
-
-
+       /**
+        * openProposalList-
+        * A vector of proposal ResourceAddress. Proposal when created are added here, a nightly job
+        * will read their status from NFT data, if status is "voting_ended", proposal "voting_stats"
+        * will be used to tally votes, appropriate action is taken corresponding to proposal approval
+        * and proposal is removed from this list.
+        */
+       openProposalList: Vec<ResourceAddress>,
     }
 
     impl Dao {
@@ -80,6 +85,8 @@ mod dao {
 
         // This is a function, and can be called directly on the blueprint once deployed
         pub fn instantiate_dao() -> Global<Dao> {
+
+            proposalsTable
 
             Self {
 
