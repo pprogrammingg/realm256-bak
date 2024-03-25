@@ -8,56 +8,61 @@ pub enum Vote {
 }
 
 #[derive(ScryptoSbor)]
-pub enum ProposalType {
-    NftWhitelist,
-    NftConfigChange,
-    DaoConfigChange,
+pub enum ProposalDataTypes {
+    NftCollectionWhiteListProposalData,
+    NftCollectionConfigChangeProposalData,
+    DaoConfigChangeProposalData,
+}
+
+#[derive(ScryptoSbor, NonFungibleData)]
+pub struct NftCollectionWhiteListProposalData {
+    common_data: CommonProposalData,
+    metadata: NftCollectionWhiteListMetadata,
+}
+
+#[derive(ScryptoSbor, NonFungibleData)]
+pub struct NftCollectionConfigChangeProposalData {
+    common_data: CommonProposalData,
+    metadata: NftCollectionConfigChangeMetadata,
+}
+
+#[derive(ScryptoSbor, NonFungibleData)]
+pub struct DaoConfigChangeProposalData {
+    common_data: CommonProposalData,
+    metadata: DaoConfigChangeMetadata,
+}
+
+#[derive(ScryptoSbor)]
+pub struct NftCollectionWhiteListMetadata {
+    resource_address: ResourceAddress,
+}
+
+#[derive(ScryptoSbor)]
+pub struct NftCollectionConfigChangeMetadata {
+    resource_address: ResourceAddress,
+    update_fields: KeyValueStore<String, String>,
+}
+
+#[derive(ScryptoSbor)]
+pub struct DaoConfigChangeMetadata {
+    update_fields: KeyValueStore<String, String>,
 }
 
 #[derive(ScryptoSbor)]
 pub enum Status {
     VotingStarted,
     VotingClosed,
+    ProposalActionCompleted,
+    ProposalRejected,
 }
 
-#[derive(ScryptoSbor, NonFungibleData)]
-pub struct ProposalData {
-    proposal_type: ProposalType,
+#[derive(ScryptoSbor)]
+pub struct CommonProposalData {
     description: String,
-    metadata: ProposalMetadataType,
     status: Status,
     voting_started_instant: Instant,
     voting_ended_instant: Instant,
     vote_results: HashMap<ResourceAddress, Vote>,
-}
-
-#[derive(ScryptoSbor)]
-pub struct ProposalConfig {
-    proposal_type: ProposalType,
-    description: String,
-    metadata: ProposalMetadataType,
-}
-
-#[derive(ScryptoSbor)]
-pub enum ProposalMetadataType {
-    NftWhiteListMetadata,
-    NftConfigChangeMetadata,
-    HashMapMetadata,
-}
-
-#[derive(ScryptoSbor)]
-pub struct NftWhiteListMetadata {
-    resource_address: ResourceAddress,
-}
-#[derive(ScryptoSbor)]
-pub struct NftConfigChangeMetadata {
-    resource_address: ResourceAddress,
-    new_ips_url: String,
-}
-
-#[derive(ScryptoSbor)]
-pub struct HashMapMetadata {
-    data: HashMap<String, String>,
 }
 
 #[derive(ScryptoSbor)]
@@ -93,14 +98,26 @@ pub struct DaoConfiguraiton {
      *
      */
     proposal_period_in_days: i64,
+    /**
+     * open_proposals_vault_max_capacity -
+     * Number of open proposals that can exist, this is to avoid state explosion.
+     *
+     */
+    open_proposals_vault_max_capacity: Decimal,
 }
 
 #[blueprint]
 mod dao {
     struct Dao {
-        open_proposals_vault: NonFungibleVault, // vector holding open proposals
+        nft_collection_whitelist_open_proposals_vault: NonFungibleVault,
+        nft_collection_config_change_open_proposals_vault: NonFungibleVault,
+        dao_config_change_open_proposals_vault: NonFungibleVault,
+        nft_collection_white_list_proposal_nft_resource_manager: ResourceManager,
+        nft_collection_config_change_proposal_nft_resource_manager: ResourceManager,
+        dao_config_change_proposal_nft_resource_manager: ResourceManager,
         dao_config: DaoConfiguraiton,
-        proposal_nft_resource_manager: ResourceManager,
+        nft_whitelist_open_proposals_kv:
+            KeyValueStore<ResourceAddress, NftCollectionWhiteListProposalData>,
     }
 
     impl Dao {
@@ -111,23 +128,65 @@ mod dao {
                 Runtime::allocate_component_address(Dao::blueprint_id());
 
             // ProposalNft ResourceManager
-            let proposal_nft_resource_manager: ResourceManager =
-                ResourceBuilder::new_ruid_non_fungible::<ProposalData>(OwnerRole::None)
-                    .metadata(metadata! {
-                        init {
-                            "name" => "Proposal NFT", locked;
-                            "symbol" => "PROPOSAL_NFT", locked;
-                        }
-                    })
-                    .mint_roles(mint_roles! {
-                        minter => rule!(require(global_caller(component_address)));
-                        minter_updater => rule!(deny_all);
-                    })
-                    .burn_roles(burn_roles! {
-                        burner => rule!(require(global_caller(component_address)));
-                        burner_updater => rule!(deny_all);
-                    })
-                    .create_with_no_initial_supply();
+            let nft_collection_white_list_proposal_nft_resource_manager: ResourceManager =
+                ResourceBuilder::new_ruid_non_fungible::<NftCollectionWhiteListProposalData>(
+                    OwnerRole::None,
+                )
+                .metadata(metadata! {
+                    init {
+                        "name" => "NFT Whitelist Proposal", locked;
+                        "symbol" => "NFT_WL_PROPOSAL", locked;
+                    }
+                })
+                .mint_roles(mint_roles! {
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                })
+                .burn_roles(burn_roles! {
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                })
+                .create_with_no_initial_supply();
+
+            let nft_collection_config_change_proposal_nft_resource_manager: ResourceManager =
+                ResourceBuilder::new_ruid_non_fungible::<NftCollectionConfigChangeProposalData>(
+                    OwnerRole::None,
+                )
+                .metadata(metadata! {
+                    init {
+                        "name" => "NFT Config Change Proposal", locked;
+                        "symbol" => "NFT_CFG_CHNG_PROPOSAL", locked;
+                    }
+                })
+                .mint_roles(mint_roles! {
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                })
+                .burn_roles(burn_roles! {
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                })
+                .create_with_no_initial_supply();
+
+            let dao_config_change_proposal_nft_resource_manager: ResourceManager =
+                ResourceBuilder::new_ruid_non_fungible::<NftCollectionConfigChangeProposalData>(
+                    OwnerRole::None,
+                )
+                .metadata(metadata! {
+                    init {
+                        "name" => "DAO Config Change Proposal", locked;
+                        "symbol" => "DAO_CFG_CHNG_PROPOSAL", locked;
+                    }
+                })
+                .mint_roles(mint_roles! {
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                })
+                .burn_roles(burn_roles! {
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                })
+                .create_with_no_initial_supply();
 
             let default_dao_config = DaoConfiguraiton {
                 quorum_treshold: Decimal::from(200),
@@ -135,89 +194,167 @@ mod dao {
                 proposal_creation_min_rem_holding_ratio: dec!("0.001"),
                 proposal_creation_xrd_fee: Decimal::from(0),
                 proposal_period_in_days: 10i64,
+                open_proposals_vault_max_capacity: Decimal::from(20),
             };
 
             Self {
-                open_proposals_vault: NonFungibleVault::new(
-                    proposal_nft_resource_manager.address(),
-                ),
                 dao_config: default_dao_config,
-                proposal_nft_resource_manager,
+                nft_collection_config_change_open_proposals_vault: NonFungibleVault::new(
+                    nft_collection_white_list_proposal_nft_resource_manager.address(),
+                ),
+                nft_collection_whitelist_open_proposals_vault: NonFungibleVault::new(
+                    nft_collection_config_change_proposal_nft_resource_manager.address(),
+                ),
+                dao_config_change_open_proposals_vault: NonFungibleVault::new(
+                    dao_config_change_proposal_nft_resource_manager.address(),
+                ),
+                nft_collection_white_list_proposal_nft_resource_manager,
+                nft_collection_config_change_proposal_nft_resource_manager,
+                dao_config_change_proposal_nft_resource_manager,
+                nft_whitelist_open_proposals_kv: KeyValueStore::new(),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
             .with_address(address_reservation)
             .globalize()
         }
+
         /**
-         * create_proposal method
-         * Inputs
-         *  a) ProposalConfig proposal_config  - holds ProposalType and metadata
-         * Performs the following:
-         *  0. If ProposalsNftVault has reached full capacity exit with relevant error message
-         *  1. Validates proposal_config metadata based proposal_type
-         *  2. Set proposal_data as proposal_config fields in combination
-         *  with calculated voting_started_instant, voting_ended_instant,
-         *  status and an empty vote results object
-         *  2. Mints a new PorposalNFT and sets the NFT data from the previous step
-         *  3. Put the proposal in open_proposals_vault
+         * create_nft_collection_whitelist_proposal method
+         * Args:
+         *  a) metadata: NftCollectionWhiteListMetadata
+         *  b) description: String
+         *
+         * Body:
+         *   0. If proposal vault has reached full capacity exit with error
+         *   1. Create common_data object for Proposal NFT
+         *   2. Mint Proposal NFT with common_data and specific proposal metadata
+         *   3. Put the proposal in the proposal vault
          */
-        pub fn create_proposal(&mut self, proposal_config: ProposalConfig) {
+        pub fn create_nft_collection_whitelist_proposal(
+            &mut self,
+            metadata: NftCollectionWhiteListMetadata,
+            description: String,
+        ) {
             // 0.
-            // if (self.proposal_nft_vault) {
-            // }
-
-            // 1.
-            let metadata = proposal_config.metadata;
-            let match_result: Result<ProposalMetadataType, &'static str> =
-                match proposal_config.proposal_type {
-                    ProposalType::NftWhitelist => self.validate_nft_whitelist_proposal(metadata),
-                    ProposalType::NftConfigChange => Ok(ProposalMetadataType::NftWhiteListMetadata),
-                    ProposalType::DaoConfigChange => Ok(ProposalMetadataType::NftWhiteListMetadata),
-                };
-
+            let vault_amount = self.nft_collection_whitelist_open_proposals_vault.amount();
             assert!(
-                match_result.is_ok(),
-                "[CreateProposal] failed validation on input."
+                self.nft_collection_whitelist_open_proposals_vault.amount()
+                    <= self.dao_config.open_proposals_vault_max_capacity,
+                "open_nft_collection_whitelist_proposal_vault capacity of {:?} has exceeded!",
+                vault_amount
             );
 
-            // 2.
-            let metadata_type = match_result.unwrap();
+            // 1.
+            let common_data = self.create_common_proposal_data(description);
 
+            // 2.
+            let proposal_data = NftCollectionWhiteListProposalData {
+                metadata,
+                common_data,
+            };
+
+            let proposal_nft: Bucket = self
+                .nft_collection_white_list_proposal_nft_resource_manager
+                .mint_ruid_non_fungible(proposal_data);
+
+            // Experimental
+            //self.nft_whitelist_open_proposals_kv.insert(proposal_nft.resource_address(), proposal_data);
+
+            // 3.
+            self.nft_collection_whitelist_open_proposals_vault
+                .put(NonFungibleBucket(proposal_nft));
+        }
+
+        /**
+         * create_nft_collection_config_change_proposal method
+         * Args:
+         *  a) metadata: NftCollectionConfigChangeMetadata
+         *  b) description: String
+         *
+         * Body:
+         *   0. If proposal vault has reached full capacity exit with error
+         *   1. calculate common_data for Proposal NFT
+         *   2. Mint Proposal NFT with common_data and specific proposal metadata
+         *   3. Put the proposal in proposal vault
+         */
+        pub fn create_nft_collection_config_change_proposal(
+            &mut self,
+            metadata: NftCollectionConfigChangeMetadata,
+            description: String,
+        ) {
+            // 0.
+
+            // 1.
+            let common_data = self.create_common_proposal_data(description);
+
+            // 2.
+            let proposal_data = NftCollectionConfigChangeProposalData {
+                metadata,
+                common_data,
+            };
+
+            let proposal_nft: Bucket = self
+                .nft_collection_config_change_proposal_nft_resource_manager
+                .mint_ruid_non_fungible(proposal_data);
+
+            // 3.
+            self.nft_collection_config_change_open_proposals_vault
+                .put(NonFungibleBucket(proposal_nft));
+        }
+
+        /**
+         * create_dao_config_change_proposal method
+         * Args:
+         *  a) metadata: DaoConfigChangeMetadata
+         *  b) description: String
+         *
+         * Body:
+         *   0. If proposal vault has reached full capacity exit with error
+         *   1. calculate common_data for Proposal NFT
+         *   2. Mint Proposal NFT with common_data and specific proposal metadata
+         *   3. Put the proposal in proposal vault
+         */
+        pub fn create_dao_config_change_proposal(
+            &mut self,
+            metadata: DaoConfigChangeMetadata,
+            description: String,
+        ) {
+            // 0.
+
+            // 1.
+            let common_data = self.create_common_proposal_data(description);
+
+            // 2.
+            let proposal_data = DaoConfigChangeProposalData {
+                metadata,
+                common_data,
+            };
+
+            let proposal_nft: Bucket = self
+                .dao_config_change_proposal_nft_resource_manager
+                .mint_ruid_non_fungible(proposal_data);
+
+            // 3.
+            self.dao_config_change_open_proposals_vault
+                .put(NonFungibleBucket(proposal_nft));
+        }
+
+        /**
+         * create_common_proposal_data
+         * takes in
+         */
+        fn create_common_proposal_data(&self, description: String) -> CommonProposalData {
             let current_instant = Clock::current_time_rounded_to_minutes();
 
-            let proposal_data: ProposalData = ProposalData {
-                proposal_type: proposal_config.proposal_type,
-                description: proposal_config.description,
-                metadata: metadata_type,
+            CommonProposalData {
+                description: description,
                 status: Status::VotingStarted,
                 voting_started_instant: current_instant,
                 voting_ended_instant: current_instant
                     .add_days(self.dao_config.proposal_period_in_days)
                     .unwrap(),
                 vote_results: HashMap::new(),
-            };
-
-            let proposal_nft: Bucket = self
-                .proposal_nft_resource_manager
-                .mint_ruid_non_fungible(proposal_data);
-
-            // 3.
-            self.open_proposals_vault
-                .put(NonFungibleBucket(proposal_nft));
-        }
-
-        fn validate_nft_whitelist_proposal(
-            &self,
-            metadata: ProposalMetadataType,
-        ) -> Result<ProposalMetadataType, &'static str> {
-            match metadata {
-                ProposalMetadataType::NftWhiteListMetadata => {
-                    return Ok(ProposalMetadataType::NftWhiteListMetadata)
-                }
-                _ => return Err(
-                    "Proposal to whitelist NFT must have metadata of type NftWhiteListMetadata.",
-                ),
             }
         }
     }

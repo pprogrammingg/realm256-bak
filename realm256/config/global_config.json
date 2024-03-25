@@ -1,0 +1,21 @@
+{
+    "dapp_instant_info": {
+        "instantiate_transaction_id": "",
+        "component_address": "",
+        "proposal_nft_resource_address": ""
+    },
+    "package_info": {
+        "package_address": "",
+        "package_owner_badge_address": ""
+    },
+    "xrd_resource_address": "resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc",
+    "gateway_url_base": {
+        "stokenet": "https://stokenet.radixdlt.com",
+        "mainnet": "https://mainnet.radixdlt.com"
+    },
+    "networkd_ids": {
+        "mainnet": "0x01",
+        "stokenet": "0x02"
+    },
+    "radix_api_url_base": "https://api.radixapi.net"
+}
