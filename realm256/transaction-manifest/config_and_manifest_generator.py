@@ -53,7 +53,7 @@ def get_transaction_affected_global_entities(instantiate_transaction_id: str):
         affected_global_entities = data['transaction']['affected_global_entities']
         entities_len = len(affected_global_entities)
         # Take only component and new resource info
-        dapp_instant_values_array = affected_global_entities[2:entities_len-1]
+        dapp_instant_values_array = affected_global_entities[1:entities_len-1]
         # put instantiation tx id at the beginning
         dapp_instant_values_array.insert(0, instantiate_transaction_id)
 
@@ -71,7 +71,6 @@ def get_transaction_affected_global_entities(instantiate_transaction_id: str):
         raise Exception(f"{message}")
 
 def update_global_config(dapp_instant_values_array):
-    # print(f"Updating global config with: {json.dumps(dapp_instant_values_array, indent=4)}")
     dapp_instant_info_from_config = GLOBAL_CONFIG["dapp_instant_info"]
 
     # Get the keys
@@ -134,7 +133,6 @@ def main(instantiate_transaction_id):
     # values_for_manifest_generation takes a subset GLOBAL_CONFIG in a flattened fashion so it is easier to traverse
     values_for_manifest_generation = {} 
     values_for_manifest_generation.update(GLOBAL_CONFIG['dapp_instant_info'])
-    values_for_manifest_generation.update(GLOBAL_CONFIG['dapp_accounts'])
     values_for_manifest_generation.update({'xrd_resource_address': GLOBAL_CONFIG["xrd_resource_address"]})
 
     # print(f"values_for_manifest_generation {json.dumps(values_for_manifest_generation, indent=4)}")

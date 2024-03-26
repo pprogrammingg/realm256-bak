@@ -1,0 +1,4 @@
+CALL_FUNCTION
+    Address("package_tdx_2_1ph7cwuyxxp3x3kqwn2xkvufc5aqd874apzd6j5fll4ejjep8q30j8d")
+    "Dao"
+    "instantiate_dao";

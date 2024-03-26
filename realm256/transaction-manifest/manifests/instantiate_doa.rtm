@@ -1,9 +1,0 @@
-CALL_FUNCTION
-    Address("<package_address>")
-    "Dao"
-    "instantiate_dao";
-
-CALL_METHOD
-    Address("account_tdx_2_128x6j76narx58ykl0uj0mfc6aqaxq802edncwdx37varamh57u5905")
-    "deposit_batch"
-    Expression("ENTIRE_WORKTOP");
