@@ -133,6 +133,7 @@ def main(instantiate_transaction_id):
     # values_for_manifest_generation takes a subset GLOBAL_CONFIG in a flattened fashion so it is easier to traverse
     values_for_manifest_generation = {} 
     values_for_manifest_generation.update(GLOBAL_CONFIG['dapp_instant_info'])
+    values_for_manifest_generation.update(GLOBAL_CONFIG['dapp_accounts'])
     values_for_manifest_generation.update({'xrd_resource_address': GLOBAL_CONFIG["xrd_resource_address"]})
 
     # print(f"values_for_manifest_generation {json.dumps(values_for_manifest_generation, indent=4)}")

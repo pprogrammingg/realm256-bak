@@ -1,0 +1,4 @@
+CALL_METHOD
+    Address("<component_address>")
+    "create_nft_collection_whitelist_proposal"
+    Tuple(Address("resource_tdx_2_1n2vp8jw3myr8mjdds6hltst2494zwlgkcrd6qfs8njjy5fgr2e3u6d"), "Sample Nft Collection Whitelist Proposal");
